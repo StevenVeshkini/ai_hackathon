@@ -1,17 +1,17 @@
 import os
-import click
 import faiss
 import pickle
 from typing import List, Tuple, Dict, Any
 from dotenv import load_dotenv
-from langchain.llms import OpenAI
+from langchain.llms import OpenAI, Cohere
 from langchain.chains import VectorDBQAWithSourcesChain
 from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import OpenAIEmbeddings, CohereEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from notion import NotionPageReader
 from gpt_index.schema import Document
 from pprint import pprint
+import argparse
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -36,7 +36,7 @@ def preprocess_documents(documents: Document) -> Tuple[List[List[str]], Dict[str
         metadata = document.extra_info
         text_splits = text_splitter.split_text(content)
         docs.extend(text_splits)
-        metadatas.extend([metadata] * len(text_splits))  
+        metadatas.extend([metadata] * len(text_splits))
     return docs, metadatas
 
 def create_embeddings_and_vector_db(documents: List[List[str]], metadatas: Dict[str, Any]) -> None:
@@ -47,7 +47,6 @@ def create_embeddings_and_vector_db(documents: List[List[str]], metadatas: Dict[
     with open("db.pkl", "wb") as f:
         pickle.dump(vector_db, f)
 
-@click.command()
 def ingest(): 
     # 1. Retrieve documents and metadata from source (Notion API)
     documents = load_notion_documents()
@@ -55,14 +54,11 @@ def ingest():
     # 1.5 Pre-process documents and document metadata
     # Split documents into smaller chunks due to the context limits of the LLMs.
     docs, metadatas = preprocess_documents(documents)
-    print(docs)
-    print(metadatas)
+
     # 2. Create embeddings of documents 
     # 3. Store embeddings in vector database
     create_embeddings_and_vector_db(docs, metadatas)
 
-@click.command()
-@click.argument('question')
 def question(question: str) -> None:
     index = faiss.read_index("docs.index")
     with open("db.pkl", "rb") as f:
@@ -73,6 +69,10 @@ def question(question: str) -> None:
     result = chain({"question": question})
     pprint(f"Answer: {result['answer']}")
     pprint(f"Sources: {result['sources']}")
+    return result['answer'], result['sources']
 
-if __name__ == '__main__':
-    question()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Ask a question.')
+    parser.add_argument('question', type=str)
+    args = parser.parse_args()
+    question(args.question)

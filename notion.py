@@ -7,26 +7,15 @@ import requests
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
 
-INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
-
-# TODO: Notion DB reader coming soon!
 class NotionPageReader(BaseReader):
     """Notion Page reader.
     Reads a set of Notion pages.
     """
 
     def __init__(self, integration_token: Optional[str] = None) -> None:
-        """Initialize with parameters."""
-        if integration_token is None:
-            integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
-            if integration_token is None:
-                raise ValueError(
-                    "Must specify `integration_token` or set environment "
-                    "variable `NOTION_INTEGRATION_TOKEN`."
-                )
         self.token = integration_token
         self.headers = {
             "Authorization": "Bearer " + self.token,
@@ -124,8 +113,3 @@ class NotionPageReader(BaseReader):
             page_text = self.read_page(metadata["page_id"])
             docs.append(Document(page_text, extra_info=metadata))
         return docs
-
-
-if __name__ == "__main__":
-    reader = NotionPageReader()
-    print(reader.search("What I"))
