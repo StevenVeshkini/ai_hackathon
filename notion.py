@@ -106,7 +106,7 @@ class NotionPageReader(BaseReader):
                     "page_id": result["id"],
                     "created_by": result["created_by"]["id"],
                     "last_edited_time": result["last_edited_time"],
-                    "url": result["url"]
+                    "source": result["url"]
                 }
                 results.append(result_data)
 

@@ -1174,7 +1174,7 @@ requests = ">=2.0.0,<3.0.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "3a6ed32341a2d24328cebc8674c617be4c6579bdb15fcc8495a7e21881f32fe3"
+content-hash = "91b77f53ed656f6f183975c6e6a00b9520ac09beb66075f8e405a940adc9e06a"
 
 [metadata.files]
 async-timeout = [
