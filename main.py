@@ -3,10 +3,10 @@ import faiss
 import pickle
 from typing import List, Tuple, Dict, Any
 from dotenv import load_dotenv
-from langchain.llms import OpenAI, Cohere
+from langchain.llms import OpenAI
 from langchain.chains import VectorDBQAWithSourcesChain
 from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings, CohereEmbeddings
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from notion import NotionPageReader
 from gpt_index.schema import Document
@@ -33,15 +33,14 @@ def load_notion_documents() -> List[Document]:
 
 def preprocess_documents(documents: Document) -> Tuple[List[List[str]], Dict[str, Any]]:
     print("Processing documents...")
-    text_splitter = CharacterTextSplitter(chunk_size=1500, separator="\n")
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     docs = []
     metadatas = []
     for document in documents:
         content = document.text
-        if not content:
-            continue
         metadata = document.extra_info
         text_splits = text_splitter.split_text(content)
+        text_splits = list(filter(lambda x: x != "", text_splits))
         docs.extend(text_splits)
         metadatas.extend([metadata] * len(text_splits))
     return docs, metadatas
@@ -84,7 +83,7 @@ app = Flask(__name__)
 slack_event_adapter = SlackEventAdapter(SIGNING_SECRET, '/slack/events', app)
 
 
-@ slack_event_adapter.on('message')
+@slack_event_adapter.on('message')
 def message(payload):
     event = payload.get('event', {})
     text = event.get('text')
@@ -100,7 +99,7 @@ if __name__ == "__main__":
 
     # parser = argparse.ArgumentParser(description='Ask a question.')
     # parser.add_argument('question', type=str)
-    # args = parser.parse_args()g
+    # args = parser.parse_args()
     # question(args.question)
 
 
