@@ -2,7 +2,7 @@ import os
 import faiss
 import pickle
 from typing import List, Tuple, Dict, Any
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from langchain.llms import OpenAI
 from langchain.chains import VectorDBQAWithSourcesChain
 from langchain.vectorstores import FAISS
@@ -20,7 +20,7 @@ from threading import Thread
 
 from prompts import QUESTION_PROMPT, COMBINE_PROMPT, EXAMPLE_PROMPT
 
-load_dotenv()
+# load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 NOTION_API_KEY = os.getenv('NOTION_API_KEY')
 SLACK_TOKEN=os.getenv('SLACK_TOKEN')
@@ -129,6 +129,6 @@ if __name__ == "__main__":
     # flask_thread.join()
 
 
-    appdemo.launch(share=True)   
+    appdemo.launch(share=True)
     # # appdemo.launch()
     # app.run(debug=True)
