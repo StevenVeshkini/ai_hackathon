@@ -18,6 +18,8 @@ from flask import Flask
 from slackeventsapi import SlackEventAdapter
 from threading import Thread
 
+from prompts import QUESTION_PROMPT, COMBINE_PROMPT, EXAMPLE_PROMPT
+
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 NOTION_API_KEY = os.getenv('NOTION_API_KEY')
@@ -66,12 +68,19 @@ def ingest():
     create_embeddings_and_vector_db(docs, metadatas)
 
 def question(question: str) -> None:
+    question = "Let's think step by step. " + question
     index = faiss.read_index("docs.index")
     with open("db.pkl", "rb") as f:
         vector_db = pickle.load(f)
 
     vector_db.index = index
-    chain = VectorDBQAWithSourcesChain.from_llm(llm=OpenAI(temperature=0), vectorstore=vector_db)
+    chain = VectorDBQAWithSourcesChain.from_llm(
+        llm=OpenAI(temperature=0), 
+        vectorstore=vector_db, 
+        document_prompt=EXAMPLE_PROMPT, 
+        question_prompt=QUESTION_PROMPT, 
+        combine_prompt=COMBINE_PROMPT
+    )
     result = chain({"question": question})
     pprint(f"Question: {question}")
     pprint(f"Answer: {result['answer']}")
@@ -92,7 +101,7 @@ def message(payload):
         if "iai:" in cleantext:
             print(cleantext)
             client.chat_postMessage(channel='#internal-ai',text='thinking...')
-            resp = question("Let's think step by step. " + text)
+            resp = question(text)
             client.chat_postMessage(channel='#internal-ai',text=resp[0])
             client.chat_postMessage(channel='#internal-ai',text=resp[1])
     except Exception as err:
@@ -107,10 +116,10 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     # question(args.question)
 
-    appdemo = gr.Interface(title="InternalAI v0.1 - C̶h̶a̶t̶B̶o̶t̶ ChatBrain for [FFMPEG co.]",description="InternalAI gathers information across all sources of knowledge at a company, from writeups in Notion and Google Docs to messages in apps like Slack & Discord and makes it easily searchable for onboarding of new employees or getting existing employees caught up with new projects. Coming soon is our Github integration to allow ramp-up on engineering tasks as well.", fn=question, inputs=gr.Textbox(placeholder="Ask InternalAI a question here..."), outputs=["text","text"], allow_flagging="auto", examples=["How much am I allowed to expense for dinner in the office, and where do I report those expenses? How about at events?", "Which todos are left in our Social Media Monitoring project?", "Who should I contact about the coffee machine and stocking extra flavors?"], article='<h2>Here\'s a video showing the efficacy of InternalAI when compared to searching across slack, notion and google docs manually.</h1> <iframe width="560" height="315" src="https://www.youtube.com/embed/g4oP0GiBt_g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> <h2>FFMPEG co\'s Knowledge Sources</h1> <div>Notion: <a href="https://www.notion.so/FFMPEG-Company-Home-c8b76f986e2c4e4ab289fdd72627e50c">Link to FFMPEG co\'s Notion Homepage</a></div> <div>Google Docs: aslkdj;flajsd;lfjasl;jdfl</div> <div>Slack: aspdfowked;owiio;wimd;osmd;ocs</div> <h2>We\'ve also added a Slack integration so employees can ask InternalAI questions without even leaving their communication tools. </h2> <div>Join the Slack here: ashdfjiasdfksdfafds</div>')
+    appdemo = gr.Interface(title="InternalAI v0.1",description="InternalAI is an internal business intelligence tool that gathers information across all sources of knowledge at a company (Notion, Slack, etc) and lets employees easily ask for answers.", fn=question, inputs=gr.Textbox(placeholder="Ask InternalAI a question here..."), outputs=["text","text"], allow_flagging="auto", examples=["How much am I allowed to expense for dinner in the office, and where do I report those expenses? How about at events?", "Which todos are left in our Social Media Monitoring project?", "Who should I contact about the coffee machine and stocking extra flavors?"], article='<h2>Here\'s a video showing the efficacy of InternalAI when compared to searching across Slack, Notion and Google Docs manually.</h1> <iframe width="560" height="315" src="https://www.youtube.com/embed/g4oP0GiBt_g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> <h2>FFMPEG co\'s Knowledge Sources</h1> <div>Notion: <a href="https://mixolydian-earl-c34.notion.site/FFMPEG-Company-Home-c8b76f986e2c4e4ab289fdd72627e50c">Link to FFMPEG co\'s Notion Homepage</a></div> <h2>We\'ve also added a Slack integration so employees can ask InternalAI questions without even leaving their communication tools.</h2>')
 
 
-    print("FOR SLACK to WORK YOU MUST RUN LOCALTUNNEL (on port 5000 where flask runs) and then change the request URL in slack settings to https://LOCALTUNNELGIVENURL.loca.lt/slack/events")
+    # print("FOR SLACK to WORK YOU MUST RUN LOCALTUNNEL (on port 5000 where flask runs) and then change the request URL in slack settings to https://LOCALTUNNELGIVENURL.loca.lt/slack/events")
 
     # flask_thread = Thread(target=app.run,kwargs={'debug':False})
     # flask_thread.start()
@@ -120,6 +129,6 @@ if __name__ == "__main__":
     # flask_thread.join()
 
 
-    # appdemo.launch(share=True)   
-    # # appdemo.launch()   
+    appdemo.launch(share=True)   
+    # # appdemo.launch()
     # app.run(debug=True)
