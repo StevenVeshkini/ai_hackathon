@@ -36,7 +36,7 @@ class NotionPageReader(BaseReader):
                 "GET", block_url, headers=self.headers, json=query_dict
             )
             data = res.json()
-
+            # print(data)
             for result in data["results"]:
                 result_type = result["type"]
                 result_obj = result[result_type]
